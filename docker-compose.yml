@@ -1,0 +1,88 @@
+version: "3.9"
+
+services:
+  mongodb:
+    image: mongo:6
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    volumes:
+      - mongo_data:/data/db
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - app_network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - app_network
+
+  user_service:
+    build: .
+    container_name: user_service
+    command: python -m user_service_v1.main
+    environment:
+      MONGODB_HOST: mongodb
+      MONGODB_PORT: 27017
+      MONGODB_USERNAME: admin
+      MONGODB_PASSWORD: admin123
+      USER_DB_NAME: user_db
+      ORDER_DB_NAME: order_db
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      RABBITMQ_EXCHANGE: user_events
+      RABBITMQ_QUEUE: user_sync_queue
+    depends_on:
+      - mongodb
+      - rabbitmq
+    ports:
+      - "8001:8001"
+    networks:
+      - app_network
+
+  order_service:
+    build: .
+    container_name: order_service
+    command: python -m order_service.main
+    environment:
+      MONGODB_HOST: mongodb
+      MONGODB_PORT: 27017
+      MONGODB_USERNAME: admin
+      MONGODB_PASSWORD: admin123
+      USER_DB_NAME: user_db
+      ORDER_DB_NAME: order_db
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      RABBITMQ_EXCHANGE: user_events
+      RABBITMQ_QUEUE: user_sync_queue
+    depends_on:
+      - mongodb
+      - rabbitmq
+      - user_service
+    ports:
+      - "8003:8003"
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  mongo_data:
