@@ -1,7 +1,7 @@
 from datetime import datetime
 from fastapi import HTTPException
 from common.database import order_db_connection
-from models import (
+from order_service.models import (
     OrderCreate,
     OrderUpdateStatus,
     OrderUpdateUserInfo,
@@ -11,6 +11,10 @@ import uuid
 
 
 def create_order(order: OrderCreate) -> dict:
+    """
+    Create a new order in MongoDB.
+    Each order is tied to a user_account_id (used for synchronization).
+    """
     db = order_db_connection.get_database_sync()
     collection = db.orders
 
@@ -18,6 +22,7 @@ def create_order(order: OrderCreate) -> dict:
 
     order_in_db = OrderInDB(
         order_id=order_id,
+        user_account_id=order.user_account_id,
         email=order.email,
         delivery_address=order.delivery_address,
         items=order.items,
@@ -32,7 +37,6 @@ def create_order(order: OrderCreate) -> dict:
 
 
 def get_orders_by_status(order_status: str) -> list:
-    """Retrieve orders filtered by status"""
     db = order_db_connection.get_database_sync()
     collection = db.orders
 
@@ -96,3 +100,18 @@ def get_order(order_id: str) -> dict:
         raise HTTPException(status_code=404, detail="Order not found")
 
     return order
+
+
+def get_orders_by_user_id(user_account_id: str) -> list:
+    """
+    Retrieve all orders for a specific user_account_id.
+    """
+    db = order_db_connection.get_database_sync()
+    collection = db.orders
+
+    orders = list(collection.find({"user_account_id": user_account_id}))
+
+    if not orders:
+        raise HTTPException(status_code=404, detail=f"No orders found for user {user_account_id}")
+
+    return orders

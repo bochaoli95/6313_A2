@@ -6,7 +6,7 @@ from order_service.models import (
     OrderUpdateStatus,
     OrderUpdateUserInfo,
 )
-import order_service
+from order_service import order_service
 
 router = APIRouter()
 
@@ -39,3 +39,8 @@ def update_order_user_info(order_id: str, user_info_update: OrderUpdateUserInfo)
 def get_order(order_id: str):
     order = order_service.get_order(order_id)
     return OrderResponse(**order)
+
+@router.get("/user/{user_account_id}", response_model=List[OrderResponse])
+def get_orders_by_user(user_account_id: str):
+    orders = order_service.get_orders_by_user_id(user_account_id)
+    return [OrderResponse(**order) for order in orders]

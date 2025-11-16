@@ -1,7 +1,7 @@
 # user_service_v1/routes/user_routes.py
 from fastapi import APIRouter
 from user_service_v1.models import UserCreate, UserUpdate, UserResponse
-import user_service
+from user_service_v1 import user_service
 
 router = APIRouter()
 
