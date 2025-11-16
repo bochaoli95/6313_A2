@@ -21,7 +21,7 @@ jobs:
 
       - name: Deploy via SSH
         env:
-          HOST: ${{ secrets.AZURE_VM_HOST }}
+          HOST: ${{ secrets.SSH_HOST }}
           USER: ${{ secrets.AZURE_VM_USER }}
           PROJECT_DIR: ${{ vars.PROJECT_DIR }}
         run: |
