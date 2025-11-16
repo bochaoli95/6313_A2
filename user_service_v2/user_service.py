@@ -2,7 +2,7 @@ from datetime import datetime
 from fastapi import HTTPException, status
 from common.database import user_db_connection
 from common.event_publisher import event_publisher
-from user_service_v1.models import UserCreate, UserUpdate, UserInDB
+from user_service_v2.models import UserCreate, UserUpdate, UserInDB
 
 
 def create_user(user: UserCreate) -> dict:

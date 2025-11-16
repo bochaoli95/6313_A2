@@ -33,11 +33,11 @@ services:
     networks:
       - app_network
 
-  user_service:
+  user_service_v1:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: user_service
+    container_name: user_service_v1
     command: python -m user_service_v1.main
     environment:
       MONGODB_HOST: ${MONGODB_HOST}
@@ -115,9 +115,28 @@ services:
     depends_on:
       - mongodb
       - rabbitmq
-      - user_service
+      - user_service_v1
+      - user_service_v2
     ports:
       - "8003:8003"
+    networks:
+      - app_network
+
+  api_gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api_gateway
+    command: python -m api_gateway.main
+    environment:
+      GATEWAY_HOST: 0.0.0.0
+      GATEWAY_PORT: 8000
+    depends_on:
+      - user_service_v1
+      - user_service_v2
+      - order_service
+    ports:
+      - "8000:8000"
     networks:
       - app_network
 

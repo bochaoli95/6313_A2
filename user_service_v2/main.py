@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from common.database import user_db_connection
 from common.event_publisher import event_publisher
-from user_service_v1.user_routes import router as user_router
+from user_service_v2.user_routes import router as user_router
 import uvicorn
 import os
 
