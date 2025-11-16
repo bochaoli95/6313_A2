@@ -1,0 +1,40 @@
+name: Auto Deploy
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    name: Deploy Microservices
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH private key
+        run: |
+          echo "${{ secrets.AZURE_SSH_KEY }}" > private_key.pem
+          chmod 600 private_key.pem
+
+      - name: Deploy via SSH
+        env:
+          HOST: ${{ secrets.AZURE_VM_HOST }}
+          USER: ${{ secrets.AZURE_VM_USER }}
+          PROJECT_DIR: ${{ vars.PROJECT_DIR }}
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER@$HOST << 'EOF'
+            echo "Starting deployment on Azure VM at $(date)"
+            cd $PROJECT_DIR
+            echo "Pulling latest code..."
+            git pull origin master
+            echo "Rebuilding containers..."
+            docker-compose down
+            docker-compose up -d --build
+            echo "Deployment completed at $(date)"
+          EOF
+
+      - name: Clean up SSH key
+        run: rm -f private_key.pem
