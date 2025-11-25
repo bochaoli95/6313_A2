@@ -52,3 +52,4 @@ order_db_connection = MongoDBConnection(
     password=os.getenv("MONGODB_PASSWORD"),
     database=os.getenv("ORDER_DB_NAME", "order_db")
 )
+

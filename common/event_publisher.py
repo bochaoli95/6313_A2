@@ -80,3 +80,4 @@ class EventPublisher:
 
 
 event_publisher = EventPublisher()
+

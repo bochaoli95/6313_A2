@@ -4,7 +4,7 @@ Generic API Gateway with automatic routing based on config.yaml
 - /users → distributed to 8001 (v1) or 8002 (v2)
 - /orders → fixed to 8003
 """
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, Body
 from fastapi.responses import JSONResponse
 import requests
 import random
@@ -52,6 +52,41 @@ def forward_request(method: str, url: str, **kwargs) -> requests.Response:
         return response
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=503, detail=f"Service unavailable: {e}")
+
+@app.get("/config/routing-percentage")
+async def get_routing_percentage():
+    return {
+        "routing_percentage": routing_percentage,
+        "description": "Current percentage of traffic routed to user_service_v1",
+    }
+
+
+@app.put("/config/routing-percentage")
+async def update_routing_percentage(data: dict = Body(...)):
+    global routing_percentage
+    try:
+        new_value = float(data.get("routing_percentage"))
+        if not 0 <= new_value <= 1:
+            raise ValueError("routing_percentage must be between 0 and 1")
+
+        routing_percentage = new_value
+        print(f"⚙️ Updated routing_percentage to {routing_percentage}")
+        return {
+            "message": "Routing percentage updated successfully.",
+            "new_routing_percentage": routing_percentage,
+        }
+
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid routing_percentage value. Must be between 0 and 1.")
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {
+        "status": "healthy",
+        "routing_percentage": routing_percentage,
+        "service_prefixes": SERVICE_PREFIXES,
+    }
 
 
 @app.middleware("http")
@@ -105,17 +140,6 @@ async def universal_router(prefix: str, path: str, request: Request):
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return {
-        "status": "healthy",
-        "routing_percentage": routing_percentage,
-        "service_prefixes": SERVICE_PREFIXES,
-    }
-
 
 if __name__ == "__main__":
     import uvicorn
